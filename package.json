@@ -1,0 +1,15 @@
+{
+    "name": "com.bendz.dots.animation",
+    "version": "0.0.1",
+    "description": "Simple animation library for dots.",
+    "displayName": "Simple Dots Animation",
+    "unity": "2022.2",
+    "author": {
+        "name": "Ben Dzaebel",
+        "email": "bendzae@gmail.com"
+    },
+    "dependencies": {
+        "com.unity.entities": "1.0.0-pre.15",
+        "com.unity.entities.graphics": "1.0.0-pre.15"
+    }
+}
