@@ -16,3 +16,9 @@ To execute the sample:
 3. Add the package using the package manager -> "Add package from git url" using the https url of this repo
 4. Go to the samples tab of this package in the package manager and open the benchmark sample
 5. Open the "SampleScene"
+
+## Usage
+
+1. Install the package using the package manager -> "Add package from git url" using the https url of this repo
+2. Add the `AnimationsAuthoring` component to the root entity of a rigged model/prefab
+3. Add the `
