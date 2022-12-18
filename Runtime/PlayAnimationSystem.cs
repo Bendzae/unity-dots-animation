@@ -64,11 +64,11 @@ namespace AnimationSystem
         public void Execute(
             Entity e,
             in AnimationPlayer animationPlayer,
-            in AnimationClipData clipData
+            in DynamicBuffer<AnimationClipData> clipData
         )
         {
             AnimationPlayers.TryAdd(e, animationPlayer);
-            Animations.TryAdd(e, clipData.AnimationBlob);
+            Animations.TryAdd(e, clipData[animationPlayer.CurrentClipIndex].AnimationBlob);
         }
     }
 
@@ -80,11 +80,11 @@ namespace AnimationSystem
 
 
         [BurstCompile]
-        public void Execute(AnimatedEntityInfo info, ref Translation translation, ref Rotation rotation)
+        public void Execute(AnimatedEntityDataInfo info, DynamicBuffer<AnimatedEntityClipInfo> clipInfo, ref Translation translation, ref Rotation rotation)
         {
             var animationPlayer = AnimationPlayers[info.AnimationDataOwner];
             ref var animation = ref Animations[info.AnimationDataOwner].Value;
-            var keyFrameArrayIndex = info.IndexInKeyframeArray;
+            var keyFrameArrayIndex = clipInfo[animationPlayer.CurrentClipIndex].IndexInKeyframeArray;
             // Position
             {
                 ref var keys = ref animation.PositionKeys[keyFrameArrayIndex];
@@ -106,7 +106,7 @@ namespace AnimationSystem
                     var nextKey = keys[nextKeyIndex];
                     var timeBetweenKeys = (nextKey.Time > prevKey.Time)
                         ? nextKey.Time - prevKey.Time
-                        : (nextKey.Time + animationPlayer.Total) - prevKey.Time;
+                        : (nextKey.Time + animation.Duration) - prevKey.Time;
 
                     var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
                     var pos = math.lerp(prevKey.Value, nextKey.Value, t);
@@ -135,7 +135,7 @@ namespace AnimationSystem
                     var nextKey = keys[nextKeyIndex];
                     var timeBetweenKeys = (nextKey.Time > prevKey.Time)
                         ? nextKey.Time - prevKey.Time
-                        : (nextKey.Time + animationPlayer.Total) - prevKey.Time;
+                        : (nextKey.Time + animation.Duration) - prevKey.Time;
 
                     var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
                     var rot = math.slerp(prevKey.Value, nextKey.Value, t);
@@ -160,11 +160,11 @@ partial struct UpdateAnimationPlayerJob : IJobEntity
         animationPlayer.Elapsed += DT * animationPlayer.Speed;
         if (animationPlayer.Loop)
         {
-            animationPlayer.Elapsed %= animationPlayer.Total;
+            animationPlayer.Elapsed %= animationPlayer.CurrentDuration;
         }
         else
         {
-            animationPlayer.Elapsed = math.min(animationPlayer.Elapsed, animationPlayer.Total);
+            animationPlayer.Elapsed = math.min(animationPlayer.Elapsed, animationPlayer.CurrentDuration);
         }
     }
 }
