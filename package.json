@@ -11,5 +11,12 @@
     "dependencies": {
         "com.unity.entities": "1.0.0-pre.15",
         "com.unity.entities.graphics": "1.0.0-pre.15"
-    }
+    },
+    "samples": [
+        {
+            "displayName": "Benchmark Test",
+            "description": "Spawn multiple aniamted characters",
+            "path": "Samples~/BenchmarkScene"
+        }
+    ]
 }
