@@ -141,7 +141,6 @@ namespace AnimationSystem
         {
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
 
-            // This is only executed if we have a valid skinning setup
             Entities
                 .WithAll<AnimationClipData, NeedsBakingTag>()
                 .ForEach((Entity rootEntity, in DynamicBuffer<AnimatedEntityBakingInfo> entities) =>
