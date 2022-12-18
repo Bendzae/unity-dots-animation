@@ -14,12 +14,12 @@ namespace AnimationSystem
 
     public struct AnimationClipData : IBufferElementData
     {
+        public float Duration;
         public BlobAssetReference<AnimationBlob> AnimationBlob;
     }
 
     public struct AnimationBlob
     {
-        public float Duration;
         public BlobArray<BlobArray<KeyFrameFloat3>> PositionKeys;
         public BlobArray<BlobArray<KeyFrameFloat4>> RotationKeys;
         public BlobArray<BlobArray<KeyFrameFloat3>> ScaleKeys;

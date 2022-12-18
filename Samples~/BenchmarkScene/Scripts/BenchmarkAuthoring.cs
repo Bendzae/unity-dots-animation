@@ -79,14 +79,11 @@ namespace BenchmarkScene.Scripts
 
             if (changeAnimation)
             {
-                foreach (var (animationPlayer, clips) in SystemAPI
-                             .Query<RefRW<AnimationPlayer>, DynamicBuffer<AnimationClipData>>())
+                foreach (var animationAspect in SystemAPI.Query<AnimationAspect>())
                 {
-                    var current = animationPlayer.ValueRO.CurrentClipIndex;
+                    var current = animationAspect.CurrentClipIndex;
                     var newClipIndex = current == 0 ? 1 : 0;
-                    animationPlayer.ValueRW.CurrentClipIndex = newClipIndex;
-                    animationPlayer.ValueRW.Elapsed = 0;
-                    animationPlayer.ValueRW.CurrentDuration = clips[newClipIndex].AnimationBlob.Value.Duration;
+                    animationAspect.Play(newClipIndex);
                 }
             }
         }

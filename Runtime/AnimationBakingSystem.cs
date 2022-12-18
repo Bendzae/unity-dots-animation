@@ -21,7 +21,6 @@ namespace AnimationSystem
                 var curveBindings = AnimationUtility.GetCurveBindings(clip);
                 var animationBlobBuilder = new BlobBuilder(Allocator.Temp);
                 ref AnimationBlob animationBlob = ref animationBlobBuilder.ConstructRoot<AnimationBlob>();
-                animationBlob.Duration = clip.length;
 
                 var curvesByEntity = curveBindings.GroupBy(curve => curve.path).ToArray();
 
@@ -115,6 +114,7 @@ namespace AnimationSystem
 
                 var animationClipData = new AnimationClipData()
                 {
+                    Duration = clip.length,
                     AnimationBlob = animationBlobBuilder.CreateBlobAssetReference<AnimationBlob>(Allocator.Persistent)
                 };
                 clipBuffer[clipIndex++] = animationClipData;
@@ -123,7 +123,7 @@ namespace AnimationSystem
             AddComponent(new AnimationPlayer()
             {
                 CurrentClipIndex = 0,
-                CurrentDuration = clipBuffer[0].AnimationBlob.Value.Duration,
+                CurrentDuration = clipBuffer[0].Duration,
                 Elapsed = 0,
                 Speed = 1f,
                 Loop = true,

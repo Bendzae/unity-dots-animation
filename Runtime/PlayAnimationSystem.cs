@@ -106,7 +106,7 @@ namespace AnimationSystem
                     var nextKey = keys[nextKeyIndex];
                     var timeBetweenKeys = (nextKey.Time > prevKey.Time)
                         ? nextKey.Time - prevKey.Time
-                        : (nextKey.Time + animation.Duration) - prevKey.Time;
+                        : (nextKey.Time + animationPlayer.CurrentDuration) - prevKey.Time;
 
                     var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
                     var pos = math.lerp(prevKey.Value, nextKey.Value, t);
@@ -135,7 +135,7 @@ namespace AnimationSystem
                     var nextKey = keys[nextKeyIndex];
                     var timeBetweenKeys = (nextKey.Time > prevKey.Time)
                         ? nextKey.Time - prevKey.Time
-                        : (nextKey.Time + animation.Duration) - prevKey.Time;
+                        : (nextKey.Time + animationPlayer.CurrentDuration) - prevKey.Time;
 
                     var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
                     var rot = math.slerp(prevKey.Value, nextKey.Value, t);
