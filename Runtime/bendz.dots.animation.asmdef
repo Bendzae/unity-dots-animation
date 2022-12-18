@@ -1,0 +1,23 @@
+{
+    "name": "bendz.dots.animation",
+    "rootNamespace": "AnimationSystem",
+    "references": [
+        "Unity.Entities",
+        "Unity.Entities.Hybrid",
+        "Unity.Entities.Graphics",
+        "Unity.Burst",
+        "Unity.Mathematics",
+        "Unity.Deformations",
+        "Unity.Collections",
+        "Unity.Transforms"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
