@@ -21,4 +21,9 @@ To execute the sample:
 
 1. Install the package using the package manager -> "Add package from git url" using the https url of this repo
 2. Add the `AnimationsAuthoring` component to the root entity of a rigged model/prefab
-3. Add the `
+3. Add animation clips to the "clips" list
+4. Add the `SkinnedMeshAuthoring` component to any children that should be deformed (have a skinned mesh renderer)
+
+Now the first animation clip should be executed on entering playmode.
+
+For switching between clips see the sample.
