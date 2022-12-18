@@ -7,7 +7,7 @@ Simple animation system for the unity dots stack.
 ## Samples
 
 ### Benchmark Scence
-![Sample Gif](https://media0.giphy.com/media/pPD9JJnMWjQJQVNQ54/giphy.gif?cid=790b7611a760c82181aa9a998cf896da88e23ee817ece87a&rid=giphy.gif)
+![Sample Gif](Samples~/sample.gif)
 
 To execute the sample:
 
