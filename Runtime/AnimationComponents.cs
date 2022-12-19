@@ -47,6 +47,11 @@ namespace AnimationSystem
         public int IndexInKeyframeArray;
     }
     
+    internal struct AnimatedEntityRootTag: IComponentData
+    {
+    }
+
+    
     // Baking related
     internal struct AnimatedEntityBakingInfo : IBufferElementData
     {

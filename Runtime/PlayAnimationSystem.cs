@@ -73,6 +73,7 @@ namespace AnimationSystem
     }
 
     [BurstCompile]
+    [WithNone(typeof(AnimatedEntityRootTag))]
     partial struct UpdateAnimatedEntitesJob : IJobEntity
     {
         [ReadOnly] public NativeParallelHashMap<Entity, AnimationPlayer> AnimationPlayers;

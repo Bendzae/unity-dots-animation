@@ -149,6 +149,10 @@ namespace AnimationSystem
                     {
                         var bakingInfo = entities[entityIndex];
                         var e = bakingInfo.Entity;
+                        if (entityIndex == 0)
+                        {
+                            ecb.AddComponent(e, new AnimatedEntityRootTag());
+                        }
                         if (bakingInfo.ClipIndex == 0)
                         {
                             ecb.AddComponent(e, new AnimatedEntityDataInfo()
