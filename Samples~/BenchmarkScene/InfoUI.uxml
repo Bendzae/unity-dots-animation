@@ -1,4 +1,5 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
     <ui:Label tabindex="-1" text="Press space to spawn more entities" display-tooltip-when-elided="true" style="font-size: 18px; -unity-text-outline-color: rgba(0, 0, 0, 0); color: rgb(255, 255, 255);" />
     <ui:Label tabindex="-1" text="Press Q to change animations" display-tooltip-when-elided="true" style="font-size: 18px; color: rgb(255, 255, 255);" />
+    <ui:Label tabindex="-1" text="Mouswheel to zoom" display-tooltip-when-elided="true" style="font-size: 18px; color: rgb(255, 255, 255);" />
 </ui:UXML>
