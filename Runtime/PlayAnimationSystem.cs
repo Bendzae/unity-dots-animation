@@ -10,9 +10,14 @@ namespace AnimationSystem
     [BurstCompile]
     public partial struct PlayAnimationSystem : ISystem
     {
+        private ComponentLookup<AnimationPlayer> playerLookup;
+        private BufferLookup<AnimationClipData> clipLookup;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
+            playerLookup = state.GetComponentLookup<AnimationPlayer>();
+            clipLookup = state.GetBufferLookup<AnimationClipData>();
         }
 
         [BurstCompile]
@@ -23,29 +28,17 @@ namespace AnimationSystem
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            var query = SystemAPI.QueryBuilder().WithAll<AnimationPlayer, AnimationClipData>().Build();
-            var entityCount = query.CalculateEntityCount();
-
-            var players = 
-                new NativeParallelHashMap<Entity, AnimationPlayer>(entityCount, Allocator.TempJob);
-
-            var animations =
-                new NativeParallelHashMap<Entity, BlobAssetReference<AnimationBlob>>(entityCount, Allocator.TempJob);
-
-            var gatherJob = new GatherAnimationDataJob()
-            {
-                AnimationPlayers = players.AsParallelWriter(),
-                Animations = animations.AsParallelWriter(),
-            }.ScheduleParallel(state.Dependency);
+            playerLookup.Update(ref state);
+            clipLookup.Update(ref state);
 
             var updateAnimationJob = new UpdateAnimatedEntitesJob()
             {
-                AnimationPlayers = players,
-                Animations = animations,
-            }.ScheduleParallel(gatherJob);
-            
+                PlayerLookup = playerLookup,
+                ClipLookup = clipLookup,
+            }.ScheduleParallel(state.Dependency);
+
             var dt = SystemAPI.Time.DeltaTime;
-            
+
             state.Dependency = new UpdateAnimationPlayerJob()
             {
                 DT = dt,
@@ -76,15 +69,22 @@ namespace AnimationSystem
     [WithNone(typeof(AnimatedEntityRootTag))]
     partial struct UpdateAnimatedEntitesJob : IJobEntity
     {
-        [ReadOnly] public NativeParallelHashMap<Entity, AnimationPlayer> AnimationPlayers;
-        [ReadOnly] public NativeParallelHashMap<Entity, BlobAssetReference<AnimationBlob>> Animations;
-
+        [ReadOnly] public ComponentLookup<AnimationPlayer> PlayerLookup;
+        [ReadOnly] public BufferLookup<AnimationClipData> ClipLookup;
 
         [BurstCompile]
-        public void Execute(AnimatedEntityDataInfo info, DynamicBuffer<AnimatedEntityClipInfo> clipInfo, ref Translation translation, ref Rotation rotation)
+        public void Execute(
+            AnimatedEntityDataInfo info,
+            DynamicBuffer<AnimatedEntityClipInfo> clipInfo,
+            ref Translation translation,
+            ref Rotation rotation
+        )
         {
-            var animationPlayer = AnimationPlayers[info.AnimationDataOwner];
-            ref var animation = ref Animations[info.AnimationDataOwner].Value;
+            var animationPlayer = PlayerLookup[info.AnimationDataOwner];
+            var clipBuffer = ClipLookup[info.AnimationDataOwner];
+            var clip = clipBuffer[animationPlayer.CurrentClipIndex];
+
+            ref var animation = ref clip.AnimationBlob.Value;
             var keyFrameArrayIndex = clipInfo[animationPlayer.CurrentClipIndex].IndexInKeyframeArray;
             // Position
             {
