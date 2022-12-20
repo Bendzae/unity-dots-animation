@@ -25,7 +25,11 @@ namespace AnimationSystem
             );
 
             m_RootEntityQuery = GetEntityQuery(
+#if !ENABLE_TRANSFORM_V1
+                ComponentType.ReadOnly<LocalToWorld>(),
+#else
                 ComponentType.ReadOnly<WorldToLocal>(),
+#endif
                 ComponentType.ReadOnly<RootTag>()
             );
         }
@@ -53,10 +57,18 @@ namespace AnimationSystem
             var root = Entities
                 .WithName("GatherRootTransforms")
                 .WithAll<RootTag>()
-                .ForEach((Entity entity, in WorldToLocal worldToLocal) =>
+#if !ENABLE_TRANSFORM_V1
+                .ForEach((Entity entity, in LocalToWorld localToWorld) =>
+                {
+                    rootWorldToLocalParallel.TryAdd(entity, math.inverse(localToWorld.Value));
+                }).ScheduleParallel(dependency);
+#else
+              .ForEach((Entity entity, in WorldToLocal worldToLocal) =>
                 {
                     rootWorldToLocalParallel.TryAdd(entity, worldToLocal.Value);
-                }).ScheduleParallel(dependency);
+                }).ScheduleParallel(dependency);  
+#endif
+                
 
             dependency = JobHandle.CombineDependencies(bone, root);
 

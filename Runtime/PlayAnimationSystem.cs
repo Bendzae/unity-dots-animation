@@ -76,8 +76,12 @@ namespace AnimationSystem
         public void Execute(
             AnimatedEntityDataInfo info,
             DynamicBuffer<AnimatedEntityClipInfo> clipInfo,
+#if !ENABLE_TRANSFORM_V1
+            ref LocalTransform localTransform
+#else
             ref Translation translation,
             ref Rotation rotation
+#endif
         )
         {
             var animationPlayer = PlayerLookup[info.AnimationDataOwner];
@@ -111,7 +115,12 @@ namespace AnimationSystem
 
                     var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
                     var pos = math.lerp(prevKey.Value, nextKey.Value, t);
+                    
+#if !ENABLE_TRANSFORM_V1
+                    localTransform.Position = pos;
+#else
                     translation.Value = pos;
+#endif
                 }
             }
 
@@ -140,7 +149,12 @@ namespace AnimationSystem
 
                     var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
                     var rot = math.slerp(prevKey.Value, nextKey.Value, t);
+                    
+#if !ENABLE_TRANSFORM_V1
+                    localTransform.Rotation = rot;
+#else
                     rotation.Value = rot;
+#endif
                 }
             }
         }

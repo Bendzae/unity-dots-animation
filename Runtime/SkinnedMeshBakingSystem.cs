@@ -68,7 +68,13 @@ namespace AnimationSystem
                 {
                     // World to local is required for root space conversion of the SkinMatrices
                     // ecb.AddComponent<LocalTransform>(rootEntity.Value);
+                    
+                    
+#if !ENABLE_TRANSFORM_V1
+                    ecb.AddComponent<LocalToWorld>(rootEntity.Value); // this is possibly redundant
+#else
                     ecb.AddComponent<WorldToLocal>(rootEntity.Value);
+#endif
                     ecb.AddComponent<RootTag>(rootEntity.Value);
                     ecb.RemoveComponent<SkinnedMeshTag>(entity);
 
