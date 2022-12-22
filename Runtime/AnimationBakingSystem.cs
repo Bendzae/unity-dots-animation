@@ -44,6 +44,11 @@ namespace AnimationSystem
                 {
                     var boneTransform = authoring.transform.Find(entityCurves.Key);
                     var boneEntity = GetEntity(boneTransform);
+                    if (boneEntity == Entity.Null)
+                    {
+                        continue;
+                    }
+                    
                     entityBuffer.Add(new AnimatedEntityBakingInfo()
                     {
                         ClipIndex = clipIndex,
