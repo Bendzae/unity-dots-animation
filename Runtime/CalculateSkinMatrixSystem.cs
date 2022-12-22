@@ -1,7 +1,7 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Deformations;
 using Unity.Entities;
-using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Rendering;
 using Unity.Transforms;
@@ -12,104 +12,71 @@ namespace AnimationSystem
     [WorldSystemFilter(WorldSystemFilterFlags.Default | WorldSystemFilterFlags.Editor)]
     [UpdateInGroup(typeof(PresentationSystemGroup))]
     [UpdateBefore(typeof(DeformationsInPresentation))]
-    partial class CalculateSkinMatrixSystemBase : SystemBase
+    [BurstCompile]
+    public partial struct CalculateSkinMatrixSystem : ISystem
     {
-        EntityQuery m_BoneEntityQuery;
-        EntityQuery m_RootEntityQuery;
+        private ComponentLookup<LocalToWorld> m_localToWorld;
 
-        protected override void OnCreate()
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
         {
-            m_BoneEntityQuery = GetEntityQuery(
-                ComponentType.ReadOnly<LocalToWorld>(),
-                ComponentType.ReadOnly<BoneTag>()
-            );
-
-            m_RootEntityQuery = GetEntityQuery(
-#if !ENABLE_TRANSFORM_V1
-                ComponentType.ReadOnly<LocalToWorld>(),
-#else
-                ComponentType.ReadOnly<WorldToLocal>(),
-#endif
-                ComponentType.ReadOnly<RootTag>()
-            );
+            m_localToWorld = state.GetComponentLookup<LocalToWorld>();
         }
 
-        protected override void OnUpdate()
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
         {
-            var boneCount = m_BoneEntityQuery.CalculateEntityCount();
-            var bonesLocalToWorld = new NativeParallelHashMap<Entity, float4x4>(boneCount, Allocator.TempJob);
-            var bonesLocalToWorldParallel = bonesLocalToWorld.AsParallelWriter();
 
-            var dependency = Dependency;
+        }
 
-            var bone = Entities
-                .WithName("GatherBoneTransforms")
-                .WithAll<BoneTag>()
-                .ForEach((Entity entity, in LocalToWorld localToWorld) =>
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            m_localToWorld.Update(ref state);
+
+            state.Dependency = new CalculateSkinMatricesJob()
+            {
+                m_lookup_LocalToWorld = m_localToWorld,
+            }.ScheduleParallel(state.Dependency);
+        }
+
+        [BurstCompile]
+        private partial struct CalculateSkinMatricesJob : IJobEntity
+        {
+            [ReadOnly] public ComponentLookup<LocalToWorld> m_lookup_LocalToWorld;
+
+            [BurstCompile]
+            public void Execute(ref DynamicBuffer<SkinMatrix> skinMatrices, in DynamicBuffer<BindPose> bindPoses,
+                    in DynamicBuffer<BoneEntity> bones, in RootEntity rootEntityComponent)
+            {
+                // Loop over each bone
+                for (int i = 0; i < skinMatrices.Length; ++i)
                 {
-                    bonesLocalToWorldParallel.TryAdd(entity, localToWorld.Value);
-                }).ScheduleParallel(dependency);
+                    // Grab localToWorld matrix of bone
+                    var boneEntity = bones[i].Value;
+                    var rootEntity = rootEntityComponent.Value;
 
-            var rootCount = m_RootEntityQuery.CalculateEntityCount();
-            var rootWorldToLocal = new NativeParallelHashMap<Entity, float4x4>(rootCount, Allocator.TempJob);
-            var rootWorldToLocalParallel = rootWorldToLocal.AsParallelWriter();
+                    // #TODO: this is necessary for LiveLink?
+                    //if (!bonesLocalToWorld.ContainsKey(boneEntity) || !rootWorldToLocal.ContainsKey(rootEntity))
+                    //    return;
 
-            var root = Entities
-                .WithName("GatherRootTransforms")
-                .WithAll<RootTag>()
-#if !ENABLE_TRANSFORM_V1
-                .ForEach((Entity entity, in LocalToWorld localToWorld) =>
-                {
-                    rootWorldToLocalParallel.TryAdd(entity, math.inverse(localToWorld.Value));
-                }).ScheduleParallel(dependency);
-#else
-              .ForEach((Entity entity, in WorldToLocal worldToLocal) =>
-                {
-                    rootWorldToLocalParallel.TryAdd(entity, worldToLocal.Value);
-                }).ScheduleParallel(dependency);  
-#endif
-                
+                    var matrix = m_lookup_LocalToWorld[boneEntity].Value;
 
-            dependency = JobHandle.CombineDependencies(bone, root);
+                    // Convert matrix relative to inverse root
+                    var rootMatrixInv = math.inverse(m_lookup_LocalToWorld[rootEntity].Value);
+                    matrix = math.mul(rootMatrixInv, matrix);
 
-            dependency = Entities
-                .WithName("CalculateSkinMatrices")
-                .WithReadOnly(bonesLocalToWorld)
-                .WithReadOnly(rootWorldToLocal)
-                .ForEach((ref DynamicBuffer<SkinMatrix> skinMatrices, in DynamicBuffer<BindPose> bindPoses,
-                    in DynamicBuffer<BoneEntity> bones, in RootEntity rootEntityComponent) =>
-                {
-                    // Loop over each bone
-                    for (int i = 0; i < skinMatrices.Length; ++i)
+                    // Compute to skin matrix
+                    var bindPose = bindPoses[i].Value;
+                    matrix = math.mul(matrix, bindPose);
+
+                    // Assign SkinMatrix
+                    skinMatrices[i] = new SkinMatrix
                     {
-                        // Grab localToWorld matrix of bone
-                        var boneEntity = bones[i].Value;
-                        var rootEntity = rootEntityComponent.Value;
-
-                        // #TODO: this is necessary for LiveLink?
-                        if (!bonesLocalToWorld.ContainsKey(boneEntity) || !rootWorldToLocal.ContainsKey(rootEntity))
-                            return;
-
-                        var matrix = bonesLocalToWorld[boneEntity];
-
-                        // Convert matrix relative to root
-                        var rootMatrixInv = rootWorldToLocal[rootEntity];
-                        matrix = math.mul(rootMatrixInv, matrix);
-
-                        // Compute to skin matrix
-                        var bindPose = bindPoses[i].Value;
-                        matrix = math.mul(matrix, bindPose);
-
-                        // Assign SkinMatrix
-                        skinMatrices[i] = new SkinMatrix
-                        {
-                            Value = new float3x4(matrix.c0.xyz, matrix.c1.xyz, matrix.c2.xyz, matrix.c3.xyz)
-                        };
-                    }
-                }).ScheduleParallel(dependency);
-
-            Dependency = JobHandle.CombineDependencies(bonesLocalToWorld.Dispose(dependency),
-                rootWorldToLocal.Dispose(dependency));
+                        Value = new float3x4(matrix.c0.xyz, matrix.c1.xyz, matrix.c2.xyz, matrix.c3.xyz)
+                    };
+                }
+            }
         }
     }
 }
