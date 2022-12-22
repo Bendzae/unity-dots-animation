@@ -16,8 +16,9 @@ namespace AnimationSystem
             clipBuffer.ResizeUninitialized(authoring.Clips.Count);
             var clipIndex = 0;
             var entityBuffer = AddBuffer<AnimatedEntityBakingInfo>();
-            foreach (var clip in authoring.Clips)
+            foreach (var clipAuthoring in authoring.Clips)
             {
+                var clip = clipAuthoring.clip;
                 var curveBindings = AnimationUtility.GetCurveBindings(clip);
                 var animationBlobBuilder = new BlobBuilder(Allocator.Temp);
                 ref AnimationBlob animationBlob = ref animationBlobBuilder.ConstructRoot<AnimationBlob>();
@@ -120,6 +121,7 @@ namespace AnimationSystem
                 var animationClipData = new AnimationClipData()
                 {
                     Duration = clip.length,
+                    Speed = clipAuthoring.defaultSpeed,
                     AnimationBlob = animationBlobBuilder.CreateBlobAssetReference<AnimationBlob>(Allocator.Persistent)
                 };
                 clipBuffer[clipIndex++] = animationClipData;
@@ -130,8 +132,9 @@ namespace AnimationSystem
                 CurrentClipIndex = 0,
                 CurrentDuration = clipBuffer[0].Duration,
                 Elapsed = 0,
-                Speed = 1f,
+                Speed = clipBuffer[0].Speed,
                 Loop = true,
+                Playing = true,
             });
 
             AddComponent(new NeedsBakingTag());

@@ -47,25 +47,6 @@ namespace AnimationSystem
     }
 
     [BurstCompile]
-    [WithNone(typeof(NeedsBakingTag))]
-    partial struct GatherAnimationDataJob : IJobEntity
-    {
-        public NativeParallelHashMap<Entity, AnimationPlayer>.ParallelWriter AnimationPlayers;
-        public NativeParallelHashMap<Entity, BlobAssetReference<AnimationBlob>>.ParallelWriter Animations;
-
-        [BurstCompile]
-        public void Execute(
-            Entity e,
-            in AnimationPlayer animationPlayer,
-            in DynamicBuffer<AnimationClipData> clipData
-        )
-        {
-            AnimationPlayers.TryAdd(e, animationPlayer);
-            Animations.TryAdd(e, clipData[animationPlayer.CurrentClipIndex].AnimationBlob);
-        }
-    }
-
-    [BurstCompile]
     [WithNone(typeof(AnimatedEntityRootTag))]
     partial struct UpdateAnimatedEntitesJob : IJobEntity
     {
@@ -85,6 +66,7 @@ namespace AnimationSystem
         )
         {
             var animationPlayer = PlayerLookup[info.AnimationDataOwner];
+            if(!animationPlayer.Playing) return;
             var clipBuffer = ClipLookup[info.AnimationDataOwner];
             var clip = clipBuffer[animationPlayer.CurrentClipIndex];
 
@@ -171,6 +153,7 @@ partial struct UpdateAnimationPlayerJob : IJobEntity
     [BurstCompile]
     public void Execute(ref AnimationPlayer animationPlayer)
     {
+        if(!animationPlayer.Playing) return;
         // Update elapsed time
         animationPlayer.Elapsed += DT * animationPlayer.Speed;
         if (animationPlayer.Loop)

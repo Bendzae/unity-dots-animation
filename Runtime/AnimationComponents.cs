@@ -1,3 +1,4 @@
+using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 
@@ -10,11 +11,13 @@ namespace AnimationSystem
         public float Elapsed;
         public float Speed;
         public bool Loop;
+        public bool Playing;
     }
 
     public struct AnimationClipData : IBufferElementData
     {
         public float Duration;
+        public float Speed;
         public BlobAssetReference<AnimationBlob> AnimationBlob;
     }
 

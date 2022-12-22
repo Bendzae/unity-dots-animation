@@ -11,7 +11,7 @@ PrefabInstance:
     - target: {fileID: -8679921383154817045, guid: c63623da1c28e401b9fae67f77eec90a,
         type: 3}
       propertyPath: m_RootOrder
-      value: 0
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: c63623da1c28e401b9fae67f77eec90a,
         type: 3}
@@ -118,8 +118,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Clips:
-  - {fileID: -1186175002919557899, guid: c63623da1c28e401b9fae67f77eec90a, type: 3}
-  - {fileID: 1599155768152908184, guid: c63623da1c28e401b9fae67f77eec90a, type: 3}
+  - clip: {fileID: -1186175002919557899, guid: c63623da1c28e401b9fae67f77eec90a, type: 3}
+    defaultSpeed: 1.1
+  - clip: {fileID: 1599155768152908184, guid: c63623da1c28e401b9fae67f77eec90a, type: 3}
+    defaultSpeed: 0.7
+  - clip: {fileID: 8096419924354992578, guid: ff97d25dc323340d8a974b4b01a98008, type: 3}
+    defaultSpeed: 0.8
+  - clip: {fileID: -5752739334894465960, guid: ff97d25dc323340d8a974b4b01a98008, type: 3}
+    defaultSpeed: 0.8
 --- !u!1 &2617420186586495668 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: -6667215882085388226, guid: c63623da1c28e401b9fae67f77eec90a,
