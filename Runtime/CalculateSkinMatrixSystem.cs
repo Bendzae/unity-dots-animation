@@ -56,10 +56,6 @@ namespace AnimationSystem
                     var boneEntity = bones[i].Value;
                     var rootEntity = rootEntityComponent.Value;
 
-                    // #TODO: this is necessary for LiveLink?
-                    //if (!bonesLocalToWorld.ContainsKey(boneEntity) || !rootWorldToLocal.ContainsKey(rootEntity))
-                    //    return;
-
                     var matrix = m_lookup_LocalToWorld[boneEntity].Value;
 
                     // Convert matrix relative to inverse root
