@@ -20,7 +20,7 @@ namespace AnimationSystem
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-            m_localToWorld = state.GetComponentLookup<LocalToWorld>();
+            m_localToWorld = state.GetComponentLookup<LocalToWorld>(true);
         }
 
         [BurstCompile]
