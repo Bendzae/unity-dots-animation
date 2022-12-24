@@ -147,16 +147,19 @@ namespace AnimationSystem
     [BurstCompile]
     public partial struct AnimationBakingSystem : ISystem
     {
+        [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
 
         }
 
+        [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
 
         }
 
+        [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
@@ -186,6 +189,7 @@ namespace AnimationSystem
         {
             public EntityCommandBuffer.ParallelWriter ecb;
 
+            [BurstCompile]
             public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in DynamicBuffer<AnimatedEntityBakingInfo> entities)
             {
                 for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
