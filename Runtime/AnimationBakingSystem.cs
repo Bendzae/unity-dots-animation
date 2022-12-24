@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -49,7 +50,7 @@ namespace AnimationSystem
                     {
                         continue;
                     }
-                    
+
                     entityBuffer.Add(new AnimatedEntityBakingInfo()
                     {
                         ClipIndex = clipIndex,
@@ -143,46 +144,76 @@ namespace AnimationSystem
 
     // [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [RequireMatchingQueriesForUpdate]
-    public partial class AnimationBakingSystem : SystemBase
+    [BurstCompile]
+    public partial struct AnimationBakingSystem : ISystem
     {
-        protected override void OnUpdate()
+        public void OnCreate(ref SystemState state)
+        {
+
+        }
+
+        public void OnDestroy(ref SystemState state)
+        {
+
+        }
+
+        public void OnUpdate(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
 
-            Entities
-                .WithAll<AnimationClipData, NeedsBakingTag>()
-                .ForEach((Entity rootEntity, in DynamicBuffer<AnimatedEntityBakingInfo> entities) =>
-                {
-                    for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
-                    {
-                        var bakingInfo = entities[entityIndex];
-                        var e = bakingInfo.Entity;
-                        if (entityIndex == 0)
-                        {
-                            ecb.AddComponent(e, new AnimatedEntityRootTag());
-                        }
-                        if (bakingInfo.ClipIndex == 0)
-                        {
-                            ecb.AddComponent(e, new AnimatedEntityDataInfo()
-                            {
-                                AnimationDataOwner = rootEntity,
-                            });
-                            ecb.AddBuffer<AnimatedEntityClipInfo>(e);
-                        }
+            // Create the job.
+            var job = new AnimationBakingJob
+            {
+                ecb = ecb.AsParallelWriter()
+            };
 
-                        ecb.AppendToBuffer(e, new AnimatedEntityClipInfo()
+            // Schedule the job.
+            var jobHandle = job.ScheduleParallel(state.Dependency);
+            // Force it to complete.
+            jobHandle.Complete();
+
+            // Play back the ECB and update the entities.
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
+
+            // Stop updating the system, as the animation data has now been baked.
+            state.Enabled = false;
+        }
+
+        [WithAll(typeof(AnimationClipData), typeof(NeedsBakingTag))]
+        [BurstCompile]
+        private partial struct AnimationBakingJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter ecb;
+
+            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in DynamicBuffer<AnimatedEntityBakingInfo> entities)
+            {
+                for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
+                {
+                    var bakingInfo = entities[entityIndex];
+                    var e = bakingInfo.Entity;
+                    if (entityIndex == 0)
+                    {
+                        ecb.AddComponent(chunkIndex, e, new AnimatedEntityRootTag());
+                    }
+                    if (bakingInfo.ClipIndex == 0)
+                    {
+                        ecb.AddComponent(chunkIndex, e, new AnimatedEntityDataInfo()
                         {
-                            IndexInKeyframeArray = bakingInfo.IndexInKeyframeArray,
+                            AnimationDataOwner = entity,
                         });
+                        ecb.AddBuffer<AnimatedEntityClipInfo>(chunkIndex, e);
                     }
 
-                    ecb.RemoveComponent<NeedsBakingTag>(rootEntity);
-                    ecb.RemoveComponent<AnimatedEntityBakingInfo>(rootEntity);
-                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities).WithoutBurst()
-                .WithStructuralChanges().Run();
+                    ecb.AppendToBuffer(chunkIndex, e, new AnimatedEntityClipInfo()
+                    {
+                        IndexInKeyframeArray = bakingInfo.IndexInKeyframeArray,
+                    });
+                }
 
-            ecb.Playback(EntityManager);
-            ecb.Dispose();
+                ecb.RemoveComponent<NeedsBakingTag>(chunkIndex, entity);
+                ecb.RemoveComponent<AnimatedEntityBakingInfo>(chunkIndex, entity);
+            }
         }
     }
 }

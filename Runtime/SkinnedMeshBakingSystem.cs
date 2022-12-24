@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -55,41 +56,70 @@ namespace AnimationSystem
         }
     }
 
-    public partial class ComputeSkinMatricesBakingSystem : SystemBase
+    [BurstCompile]
+    public partial struct ComputeSkinMatricesBakingSystem : ISystem
     {
-        protected override void OnUpdate()
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+
+        }
+
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
 
-            // This is only executed if we have a valid skinning setup
-            Entities
-                .WithAll<SkinnedMeshTag>()
-                .ForEach((Entity entity, in RootEntity rootEntity, in DynamicBuffer<BoneEntity> bones) =>
-                {
-                    // World to local is required for root space conversion of the SkinMatrices
-                    // ecb.AddComponent<LocalTransform>(rootEntity.Value);
-                    
-                    
-#if !ENABLE_TRANSFORM_V1
-                    ecb.AddComponent<LocalToWorld>(rootEntity.Value); // this is possibly redundant
-#else
-                    ecb.AddComponent<WorldToLocal>(rootEntity.Value);
-#endif
-                    ecb.AddComponent<RootTag>(rootEntity.Value);
-                    ecb.RemoveComponent<SkinnedMeshTag>(entity);
+            // Create the job.
+            var job = new ComputeSkinMatricesBakingDataJob
+            {
+                ecb = ecb.AsParallelWriter()
+            };
 
-                    // Add tags to the bones so we can find them later
-                    // when computing the SkinMatrices
-                    for (int boneIndex = 0; boneIndex < bones.Length; ++boneIndex)
-                    {
-                        var boneEntity = bones[boneIndex].Value;
-                        ecb.AddComponent(boneEntity, new BoneTag());
-                    }
-                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities).WithoutBurst()
-                .WithStructuralChanges().Run();
+            // Schedule the job.
+            var jobHandle = job.ScheduleParallel(state.Dependency);
+            // Force it to complete.
+            jobHandle.Complete();
 
-            ecb.Playback(EntityManager);
+            // Play back the ECB and update the entities.
+            ecb.Playback(state.EntityManager);
             ecb.Dispose();
+
+            // Stop updating the system, as the bone data has now been baked.
+            state.Enabled = false;
+        }
+
+        [WithAll(typeof(SkinnedMeshTag))]
+        [BurstCompile]
+        private partial struct ComputeSkinMatricesBakingDataJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter ecb;
+
+            [BurstCompile]
+            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in RootEntity rootEntity, in DynamicBuffer<BoneEntity> bones)
+            {
+#if !ENABLE_TRANSFORM_V1
+                ecb.AddComponent<LocalToWorld>(chunkIndex, rootEntity.Value); // this is possibly redundant
+#else
+                ecb.AddComponent<WorldToLocal>(chunkIndex, rootEntity.Value);
+#endif
+                ecb.AddComponent<RootEntity>(chunkIndex, rootEntity.Value);
+                ecb.RemoveComponent<SkinnedMeshTag>(chunkIndex, entity);
+
+                // Add tags to the bones so we can find them later
+                // when computing the SkinMatrices
+                for (int boneIndex = 0; boneIndex < bones.Length; ++boneIndex)
+                {
+                    var boneEntity = bones[boneIndex].Value;
+                    ecb.AddComponent(chunkIndex, boneEntity, new BoneTag());
+                }
+            }
         }
     }
 }
