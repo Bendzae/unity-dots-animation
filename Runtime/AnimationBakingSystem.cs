@@ -147,10 +147,15 @@ namespace AnimationSystem
     [BurstCompile]
     public partial struct AnimationBakingSystem : ISystem
     {
+        private EntityQuery m_entityQuery;
+
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
-
+            m_entityQuery = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<AnimationClipData, NeedsBakingTag>()
+                .WithOptions(EntityQueryOptions.IncludeDisabledEntities)
+                .Build(ref state);
         }
 
         [BurstCompile]
@@ -171,16 +176,13 @@ namespace AnimationSystem
             };
 
             // Schedule the job.
-            var jobHandle = job.ScheduleParallel(state.Dependency);
+            var jobHandle = job.ScheduleParallel(m_entityQuery, state.Dependency);
             // Force it to complete.
             jobHandle.Complete();
 
             // Play back the ECB and update the entities.
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
-
-            // Stop updating the system, as the animation data has now been baked.
-            state.Enabled = false;
         }
 
         [WithAll(typeof(AnimationClipData), typeof(NeedsBakingTag))]
