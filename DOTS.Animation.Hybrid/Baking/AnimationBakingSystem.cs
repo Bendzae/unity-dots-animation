@@ -172,10 +172,11 @@ namespace AnimationSystem.Hybrid
         {
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
             
-            new AnimationBakingJob
+            var job = new AnimationBakingJob
             {
                 ecb = ecb
-            }.Run(m_entityQuery);
+            }.ScheduleParallel(m_entityQuery, state.Dependency);
+            job.Complete();
             
             // Play back the ECB and update the entities.
             ecb.Playback(state.EntityManager);
@@ -216,50 +217,5 @@ namespace AnimationSystem.Hybrid
         }
     }
     
-    /*
-    [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
-    [RequireMatchingQueriesForUpdate]
-    public partial class AnimationBakingSystem : SystemBase
-    {
-        protected override void OnUpdate()
-        {
-            var ecb = new EntityCommandBuffer(Allocator.TempJob);
-
-            Entities
-                .WithAll<AnimationClipData, NeedsBakingTag>()
-                .ForEach((Entity rootEntity, in DynamicBuffer<AnimatedEntityBakingInfo> entities) =>
-                {
-                    for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
-                    {
-                        var bakingInfo = entities[entityIndex];
-                        var e = bakingInfo.Entity;
-                        if (entityIndex == 0)
-                        {
-                            ecb.AddComponent(e, new AnimatedEntityRootTag());
-                        }
-                        if (bakingInfo.ClipIndex == 0)
-                        {
-                            ecb.AddComponent(e, new AnimatedEntityDataInfo()
-                            {
-                                AnimationDataOwner = rootEntity,
-                            });
-                            ecb.AddBuffer<AnimatedEntityClipInfo>(e);
-                        }
-
-                        ecb.AppendToBuffer(e, new AnimatedEntityClipInfo()
-                        {
-                            IndexInKeyframeArray = bakingInfo.IndexInKeyframeArray,
-                        });
-                    }
-
-                    ecb.RemoveComponent<NeedsBakingTag>(rootEntity);
-                    ecb.RemoveComponent<AnimatedEntityBakingInfo>(rootEntity);
-                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab).WithoutBurst()
-                .WithStructuralChanges().Run();
-
-            ecb.Playback(EntityManager);
-            ecb.Dispose();
-        }
-    }*/
 }
 #endif
