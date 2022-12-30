@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
@@ -144,7 +145,78 @@ namespace AnimationSystem
             AddComponent(new NeedsBakingTag());
         }
     }
+    
+    [BurstCompile]
+    [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
+    public partial struct AnimationBakingSystem : ISystem
+    {
+        private EntityQuery m_entityQuery;
 
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            m_entityQuery = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<AnimationClipData, NeedsBakingTag>()
+                .WithOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab)
+                .Build(ref state);
+        }
+
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            var ecb = new EntityCommandBuffer(Allocator.TempJob);
+            
+            new AnimationBakingJob
+            {
+                ecb = ecb
+            }.Run(m_entityQuery);
+            
+            // Play back the ECB and update the entities.
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
+        }
+
+        [BurstCompile]
+        private partial struct AnimationBakingJob : IJobEntity
+        {
+            public EntityCommandBuffer ecb;
+
+            [BurstCompile]
+            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in DynamicBuffer<AnimatedEntityBakingInfo> entities)
+            {
+                for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
+                {
+                    var bakingInfo = entities[entityIndex];
+                    var e = bakingInfo.Entity;
+                    if (entityIndex == 0)
+                    {
+                        ecb.AddComponent(e, new AnimatedEntityRootTag());
+                    }
+                    if (bakingInfo.ClipIndex == 0)
+                    {
+                        ecb.AddComponent(e, new AnimatedEntityDataInfo()
+                        {
+                            AnimationDataOwner = entity,
+                        });
+                        ecb.AddBuffer<AnimatedEntityClipInfo>( e);
+                    }
+
+                    ecb.AppendToBuffer(e, new AnimatedEntityClipInfo()
+                    {
+                        IndexInKeyframeArray = bakingInfo.IndexInKeyframeArray,
+                    });
+                }
+            }
+        }
+    }
+    
+    /*
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [RequireMatchingQueriesForUpdate]
     public partial class AnimationBakingSystem : SystemBase
@@ -188,6 +260,6 @@ namespace AnimationSystem
             ecb.Playback(EntityManager);
             ecb.Dispose();
         }
-    }
+    }*/
 }
 #endif

@@ -1,3 +1,4 @@
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
@@ -5,6 +6,7 @@ using UnityEngine;
 
 namespace AnimationSystem
 {
+    [TemporaryBakingType]
     internal struct SkinnedMeshTag : IComponentData
     {
     }
@@ -55,7 +57,75 @@ namespace AnimationSystem
         }
     }
 
+    [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
+    public partial struct ComputeSkinMatricesBakingSystem : ISystem
+    {
+        private EntityQuery m_entityQuery;
+
+        [BurstCompile]
+        public void OnCreate(ref SystemState state)
+        {
+            m_entityQuery = new EntityQueryBuilder(Allocator.Temp)
+                .WithAll<SkinnedMeshTag>()
+                .WithOptions(EntityQueryOptions.IncludeDisabledEntities)
+                .Build(ref state);
+        }
+
+        [BurstCompile]
+        public void OnDestroy(ref SystemState state)
+        {
+
+        }
+
+        [BurstCompile]
+        public void OnUpdate(ref SystemState state)
+        {
+            var ecb = new EntityCommandBuffer(Allocator.TempJob);
+
+            // Create the job.
+            var job = new ComputeSkinMatricesBakingDataJob
+            {
+                ecb = ecb.AsParallelWriter()
+            };
+
+            // Schedule the job.
+            var jobHandle = job.ScheduleParallel(m_entityQuery, state.Dependency);
+            // Force it to complete.
+            jobHandle.Complete();
+
+            // Play back the ECB and update the entities.
+            ecb.Playback(state.EntityManager);
+            ecb.Dispose();
+        }
+
+        [BurstCompile]
+        private partial struct ComputeSkinMatricesBakingDataJob : IJobEntity
+        {
+            public EntityCommandBuffer.ParallelWriter ecb;
+
+            [BurstCompile]
+            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in RootEntity rootEntity, in DynamicBuffer<BoneEntity> bones)
+            {
+#if !ENABLE_TRANSFORM_V1
+                ecb.AddComponent<LocalToWorld>(chunkIndex, rootEntity.Value); // this is possibly redundant
+#else
+                ecb.AddComponent<WorldToLocal>(chunkIndex, rootEntity.Value);
+#endif
+                ecb.AddComponent<RootEntity>(chunkIndex, rootEntity.Value);
+
+                // Add tags to the bones so we can find them later
+                // when computing the SkinMatrices
+                for (int boneIndex = 0; boneIndex < bones.Length; ++boneIndex)
+                {
+                    var boneEntity = bones[boneIndex].Value;
+                    ecb.AddComponent(chunkIndex, boneEntity, new BoneTag());
+                }
+            }
+        }
+    }
+    
+    /*[WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial class ComputeSkinMatricesBakingSystem : SystemBase
     {
         protected override void OnUpdate()
@@ -77,7 +147,6 @@ namespace AnimationSystem
                     ecb.AddComponent<WorldToLocal>(rootEntity.Value);
 #endif
                     ecb.AddComponent<RootTag>(rootEntity.Value);
-                    ecb.RemoveComponent<SkinnedMeshTag>(entity);
 
                     // Add tags to the bones so we can find them later
                     // when computing the SkinMatrices
@@ -92,5 +161,5 @@ namespace AnimationSystem
             ecb.Playback(EntityManager);
             ecb.Dispose();
         }
-    }
+    }*/
 }
