@@ -174,7 +174,7 @@ namespace AnimationSystem.Hybrid
             
             var job = new AnimationBakingJob
             {
-                ecb = ecb
+                ecb = ecb.AsParallelWriter()
             }.ScheduleParallel(m_entityQuery, state.Dependency);
             job.Complete();
             
@@ -186,7 +186,7 @@ namespace AnimationSystem.Hybrid
         [BurstCompile]
         private partial struct AnimationBakingJob : IJobEntity
         {
-            public EntityCommandBuffer ecb;
+            public EntityCommandBuffer.ParallelWriter ecb;
 
             [BurstCompile]
             public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in DynamicBuffer<AnimatedEntityBakingInfo> entities)
@@ -197,18 +197,18 @@ namespace AnimationSystem.Hybrid
                     var e = bakingInfo.Entity;
                     if (entityIndex == 0)
                     {
-                        ecb.AddComponent(e, new AnimatedEntityRootTag());
+                        ecb.AddComponent(chunkIndex, e, new AnimatedEntityRootTag());
                     }
                     if (bakingInfo.ClipIndex == 0)
                     {
-                        ecb.AddComponent(e, new AnimatedEntityDataInfo()
+                        ecb.AddComponent(chunkIndex, e, new AnimatedEntityDataInfo()
                         {
                             AnimationDataOwner = entity,
                         });
-                        ecb.AddBuffer<AnimatedEntityClipInfo>( e);
+                        ecb.AddBuffer<AnimatedEntityClipInfo>(chunkIndex, e);
                     }
 
-                    ecb.AppendToBuffer(e, new AnimatedEntityClipInfo()
+                    ecb.AppendToBuffer(chunkIndex, e, new AnimatedEntityClipInfo()
                     {
                         IndexInKeyframeArray = bakingInfo.IndexInKeyframeArray,
                     });
