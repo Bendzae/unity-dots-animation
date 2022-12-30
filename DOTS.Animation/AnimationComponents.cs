@@ -40,30 +40,22 @@ namespace AnimationSystem
         public float4 Value;
     }
     
-    internal struct AnimatedEntityDataInfo : IComponentData
+    public struct AnimatedEntityDataInfo : IComponentData
     {
         public Entity AnimationDataOwner;
     }
     
-    internal struct AnimatedEntityClipInfo : IBufferElementData
+    public struct AnimatedEntityClipInfo : IBufferElementData
     {
         public int IndexInKeyframeArray;
     }
     
-    internal struct AnimatedEntityRootTag: IComponentData
+    public struct AnimatedEntityRootTag: IComponentData
     {
     }
 
     
-    // Baking related
-    internal struct AnimatedEntityBakingInfo : IBufferElementData
-    {
-        public int ClipIndex;
-        public Entity Entity;
-        public int IndexInKeyframeArray;
-    }
 
-    internal struct NeedsBakingTag : IComponentData
-    {
-    }
+
+
 }

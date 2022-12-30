@@ -55,6 +55,7 @@ namespace AnimationSystem
         }
     }
 
+    [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial class ComputeSkinMatricesBakingSystem : SystemBase
     {
         protected override void OnUpdate()
@@ -85,7 +86,7 @@ namespace AnimationSystem
                         var boneEntity = bones[boneIndex].Value;
                         ecb.AddComponent(boneEntity, new BoneTag());
                     }
-                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities).WithoutBurst()
+                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab).WithoutBurst()
                 .WithStructuralChanges().Run();
 
             ecb.Playback(EntityManager);

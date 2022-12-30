@@ -145,7 +145,7 @@ namespace AnimationSystem
 
 
 [BurstCompile]
-[WithNone(typeof(NeedsBakingTag))]
+//[WithNone(typeof(NeedsBakingTag))]
 partial struct UpdateAnimationPlayerJob : IJobEntity
 {
     public float DT;

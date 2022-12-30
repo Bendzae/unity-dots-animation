@@ -4,6 +4,8 @@ using System.Linq;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+
+#if UNITY_EDITOR
 using UnityEditor;
 
 namespace AnimationSystem
@@ -19,6 +21,7 @@ namespace AnimationSystem
             foreach (var clipAuthoring in authoring.Clips)
             {
                 var clip = clipAuthoring.clip;
+                
                 var curveBindings = AnimationUtility.GetCurveBindings(clip);
                 var animationBlobBuilder = new BlobBuilder(Allocator.Temp);
                 ref AnimationBlob animationBlob = ref animationBlobBuilder.ConstructRoot<AnimationBlob>();
@@ -59,6 +62,7 @@ namespace AnimationSystem
 
 
                     var curveDict = entityCurves.ToDictionary(curve => curve.propertyName, curve => curve);
+                    
                     var posX = AnimationUtility.GetEditorCurve(clip, curveDict.GetValueOrDefault("m_LocalPosition.x"));
                     var posY = AnimationUtility.GetEditorCurve(clip, curveDict.GetValueOrDefault("m_LocalPosition.y"));
                     var posZ = AnimationUtility.GetEditorCurve(clip, curveDict.GetValueOrDefault("m_LocalPosition.z"));
@@ -141,7 +145,7 @@ namespace AnimationSystem
         }
     }
 
-    // [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
+    [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     [RequireMatchingQueriesForUpdate]
     public partial class AnimationBakingSystem : SystemBase
     {
@@ -178,7 +182,7 @@ namespace AnimationSystem
 
                     ecb.RemoveComponent<NeedsBakingTag>(rootEntity);
                     ecb.RemoveComponent<AnimatedEntityBakingInfo>(rootEntity);
-                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities).WithoutBurst()
+                }).WithEntityQueryOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab).WithoutBurst()
                 .WithStructuralChanges().Run();
 
             ecb.Playback(EntityManager);
@@ -186,3 +190,4 @@ namespace AnimationSystem
         }
     }
 }
+#endif

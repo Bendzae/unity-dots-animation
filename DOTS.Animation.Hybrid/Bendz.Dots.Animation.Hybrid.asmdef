@@ -1,5 +1,5 @@
 {
-    "name": "bendz.dots.animation",
+    "name": "Bendz.Dots.Animation.Hybrid",
     "rootNamespace": "AnimationSystem",
     "references": [
         "Unity.Entities",
@@ -9,7 +9,8 @@
         "Unity.Mathematics",
         "Unity.Deformations",
         "Unity.Collections",
-        "Unity.Transforms"
+        "Unity.Transforms",
+        "Bendz.Dots.Animation"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
