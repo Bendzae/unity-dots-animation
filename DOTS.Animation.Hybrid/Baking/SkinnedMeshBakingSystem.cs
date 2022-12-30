@@ -4,13 +4,9 @@ using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
 
-namespace AnimationSystem
+namespace AnimationSystem.Hybrid
 {
-    [TemporaryBakingType]
-    internal struct SkinnedMeshTag : IComponentData
-    {
-    }
-
+    
     internal class SkinnedMeshBaker : Baker<SkinnedMeshAuthoring>
     {
         public override void Bake(SkinnedMeshAuthoring authoring)

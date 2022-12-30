@@ -1,6 +1,6 @@
 {
     "name": "Bendz.Dots.Animation.Hybrid",
-    "rootNamespace": "AnimationSystem",
+    "rootNamespace": "AnimationSystem.Hybrid",
     "references": [
         "Unity.Entities",
         "Unity.Entities.Hybrid",

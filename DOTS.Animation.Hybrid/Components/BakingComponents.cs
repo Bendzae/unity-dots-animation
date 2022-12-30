@@ -1,6 +1,6 @@
 ﻿using Unity.Entities;
 
-namespace AnimationSystem
+namespace AnimationSystem.Hybrid
 {
     [TemporaryBakingType]
     internal struct NeedsBakingTag : IComponentData
@@ -14,5 +14,10 @@ namespace AnimationSystem
         public int    ClipIndex;
         public Entity Entity;
         public int    IndexInKeyframeArray;
+    }
+    
+    [TemporaryBakingType]
+    internal struct SkinnedMeshTag : IComponentData
+    {
     }
 }

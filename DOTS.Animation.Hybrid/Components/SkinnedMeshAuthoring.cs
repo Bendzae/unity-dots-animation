@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace AnimationSystem
+namespace AnimationSystem.Hybrid
 {
     public class SkinnedMeshAuthoring : MonoBehaviour
     {

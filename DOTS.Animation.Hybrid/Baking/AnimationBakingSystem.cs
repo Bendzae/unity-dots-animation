@@ -9,7 +9,7 @@ using Unity.Mathematics;
 #if UNITY_EDITOR
 using UnityEditor;
 
-namespace AnimationSystem
+namespace AnimationSystem.Hybrid
 {
     public class AnimationBaker : Baker<AnimationsAuthoring>
     {
