@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace AnimationSystem
+namespace AnimationSystem.Hybrid
 {
     public class AnimationsAuthoring : MonoBehaviour
     {
