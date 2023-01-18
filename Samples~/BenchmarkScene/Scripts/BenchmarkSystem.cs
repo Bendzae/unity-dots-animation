@@ -79,7 +79,7 @@ public partial struct BenchmarkSystem : ISystem
             {
                 var current = animationAspect.CurrentClipIndex;
                 var newClipIndex = (current + 1) % animationAspect.ClipBuffer.Length;
-                animationAspect.Play(newClipIndex);
+                animationAspect.CrossFade(newClipIndex, 0.5f);
             }
         }
     }

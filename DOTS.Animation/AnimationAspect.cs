@@ -14,10 +14,22 @@ namespace AnimationSystem
         {
             var clip = ClipBuffer[clipIndex];
             AnimationPlayer.ValueRW.CurrentClipIndex = clipIndex;
-            AnimationPlayer.ValueRW.Elapsed = 0;
+            AnimationPlayer.ValueRW.CurrentElapsed = 0;
             AnimationPlayer.ValueRW.CurrentDuration = clip.Duration;
-            AnimationPlayer.ValueRW.Speed = clip.Speed;
+            AnimationPlayer.ValueRW.CurrentSpeed = clip.Speed;
             AnimationPlayer.ValueRW.Playing = true;
+        }
+        
+        public void CrossFade(int clipIndex, float transitionDuration)
+        {
+            var clip = ClipBuffer[clipIndex];
+            AnimationPlayer.ValueRW.NextClipIndex = clipIndex;
+            AnimationPlayer.ValueRW.NextDuration = clip.Duration;
+            AnimationPlayer.ValueRW.NextElapsed = 0;
+            AnimationPlayer.ValueRW.NextSpeed = clip.Speed;
+            AnimationPlayer.ValueRW.Playing = true;
+            AnimationPlayer.ValueRW.InTransition = true;
+            AnimationPlayer.ValueRW.TransitionDuration = transitionDuration;
         }
         
         public void Pause()

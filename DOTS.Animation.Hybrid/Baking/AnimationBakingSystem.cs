@@ -136,8 +136,8 @@ namespace AnimationSystem.Hybrid
             {
                 CurrentClipIndex = 0,
                 CurrentDuration = clipBuffer[0].Duration,
-                Elapsed = 0,
-                Speed = clipBuffer[0].Speed,
+                CurrentElapsed = 0,
+                CurrentSpeed = clipBuffer[0].Speed,
                 Loop = true,
                 Playing = true,
             });

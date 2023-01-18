@@ -66,78 +66,123 @@ namespace AnimationSystem
         )
         {
             var animationPlayer = PlayerLookup[info.AnimationDataOwner];
-            if(!animationPlayer.Playing) return;
+            if (!animationPlayer.Playing) return;
             var clipBuffer = ClipLookup[info.AnimationDataOwner];
-            var clip = clipBuffer[animationPlayer.CurrentClipIndex];
 
-            ref var animation = ref clip.AnimationBlob.Value;
-            var keyFrameArrayIndex = clipInfo[animationPlayer.CurrentClipIndex].IndexInKeyframeArray;
+            var clips = new NativeArray<AnimationClipData>(2, Allocator.Temp);
+            clips[0] = clipBuffer[animationPlayer.CurrentClipIndex];
+
+            var keyframeArrayIndices = new NativeArray<int>(2, Allocator.Temp);
+            keyframeArrayIndices[0] = clipInfo[animationPlayer.CurrentClipIndex].IndexInKeyframeArray;
+
+            var elapsedTimes = new NativeArray<float>(2, Allocator.Temp);
+            elapsedTimes[0] = animationPlayer.CurrentElapsed;
+
+            var durations = new NativeArray<float>(2, Allocator.Temp);
+            durations[0] = animationPlayer.CurrentDuration;
+            
+            if (animationPlayer.InTransition)
+            {
+                clips[1] = clipBuffer[animationPlayer.NextClipIndex];
+                keyframeArrayIndices[1] = clipInfo[animationPlayer.NextClipIndex].IndexInKeyframeArray;
+                elapsedTimes[1] = animationPlayer.NextElapsed;
+                durations[1] = animationPlayer.NextDuration;
+            }
+
             // Position
             {
-                ref var keys = ref animation.PositionKeys[keyFrameArrayIndex];
-                var length = keys.Length;
-                if (length > 0)
+                NativeArray<float3> positions = new NativeArray<float3>(2, Allocator.Temp);
+                for (int cIdx = 0; cIdx < 2; cIdx++)
                 {
-                    var nextKeyIndex = 0;
-                    for (int i = 0; i < length; i++)
+                    if (cIdx == 1 && !animationPlayer.InTransition) continue;
+
+                    ref var animation = ref clips[cIdx].AnimationBlob.Value;
+                    ref var keys = ref animation.PositionKeys[keyframeArrayIndices[cIdx]];
+                    var length = keys.Length;
+                    var elapsed = elapsedTimes[cIdx];
+                    var duration = durations[cIdx];
+
+                    if (length > 0)
                     {
-                        if (keys[i].Time > animationPlayer.Elapsed)
+                        var nextKeyIndex = 0;
+                        for (int i = 0; i < length; i++)
                         {
-                            nextKeyIndex = i;
-                            break;
+                            if (keys[i].Time > elapsed)
+                            {
+                                nextKeyIndex = i;
+                                break;
+                            }
                         }
+
+                        var prevKeyIndex = (nextKeyIndex == 0) ? length - 1 : nextKeyIndex - 1;
+                        var prevKey = keys[prevKeyIndex];
+                        var nextKey = keys[nextKeyIndex];
+                        var timeBetweenKeys = (nextKey.Time > prevKey.Time)
+                            ? nextKey.Time - prevKey.Time
+                            : (nextKey.Time + duration) - prevKey.Time;
+
+                        var t = (elapsed - prevKey.Time) / timeBetweenKeys;
+                        positions[cIdx] = math.lerp(prevKey.Value, nextKey.Value, t);
                     }
-
-                    var prevKeyIndex = (nextKeyIndex == 0) ? length - 1 : nextKeyIndex - 1;
-                    var prevKey = keys[prevKeyIndex];
-                    var nextKey = keys[nextKeyIndex];
-                    var timeBetweenKeys = (nextKey.Time > prevKey.Time)
-                        ? nextKey.Time - prevKey.Time
-                        : (nextKey.Time + animationPlayer.CurrentDuration) - prevKey.Time;
-
-                    var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
-                    var pos = math.lerp(prevKey.Value, nextKey.Value, t);
-                    
-#if !ENABLE_TRANSFORM_V1
-                    localTransform.Position = pos;
-#else
-                    translation.Value = pos;
-#endif
                 }
+
+                float3 newPosition = (animationPlayer.InTransition && positions.Length == 2)
+                    ? math.lerp(positions[0], positions[1],
+                        animationPlayer.TransitionElapsed / animationPlayer.TransitionDuration)
+                    : positions[0];
+#if !ENABLE_TRANSFORM_V1
+                localTransform.Position = newPosition;
+#else
+                    translation.Value = newPosition;
+#endif
             }
 
             // Rotation
             {
-                ref var keys = ref animation.RotationKeys[keyFrameArrayIndex];
-                var length = keys.Length;
-                if (length > 0)
+                NativeArray<quaternion> rotations = new NativeArray<quaternion>(2, Allocator.Temp);
+                for (int cIdx = 0; cIdx < 2; cIdx++)
                 {
-                    var nextKeyIndex = 0;
-                    for (int i = 0; i < length; i++)
+                    if (cIdx == 1 && !animationPlayer.InTransition) continue;
+
+                    ref var animation = ref clips[cIdx].AnimationBlob.Value;
+                    ref var keys = ref animation.RotationKeys[keyframeArrayIndices[cIdx]];
+                    var length = keys.Length;
+                    var elapsed = elapsedTimes[cIdx];
+                    var duration = durations[cIdx];
+
+                    if (length > 0)
                     {
-                        if (keys[i].Time > animationPlayer.Elapsed)
+                        var nextKeyIndex = 0;
+                        for (int i = 0; i < length; i++)
                         {
-                            nextKeyIndex = i;
-                            break;
+                            if (keys[i].Time > elapsed)
+                            {
+                                nextKeyIndex = i;
+                                break;
+                            }
                         }
+
+                        var prevKeyIndex = (nextKeyIndex == 0) ? length - 1 : nextKeyIndex - 1;
+                        var prevKey = keys[prevKeyIndex];
+                        var nextKey = keys[nextKeyIndex];
+                        var timeBetweenKeys = (nextKey.Time > prevKey.Time)
+                            ? nextKey.Time - prevKey.Time
+                            : (nextKey.Time + duration) - prevKey.Time;
+
+                        var t = (elapsed - prevKey.Time) / timeBetweenKeys;
+                        rotations[cIdx] = math.slerp(prevKey.Value, nextKey.Value, t);
                     }
-
-                    var prevKeyIndex = (nextKeyIndex == 0) ? length - 1 : nextKeyIndex - 1;
-                    var prevKey = keys[prevKeyIndex];
-                    var nextKey = keys[nextKeyIndex];
-                    var timeBetweenKeys = (nextKey.Time > prevKey.Time)
-                        ? nextKey.Time - prevKey.Time
-                        : (nextKey.Time + animationPlayer.CurrentDuration) - prevKey.Time;
-
-                    var t = (animationPlayer.Elapsed - prevKey.Time) / timeBetweenKeys;
-                    var rot = math.slerp(prevKey.Value, nextKey.Value, t);
-                    
-#if !ENABLE_TRANSFORM_V1
-                    localTransform.Rotation = rot;
-#else
-                    rotation.Value = rot;
-#endif
                 }
+
+                quaternion newRotation = (animationPlayer.InTransition && rotations.Length == 2)
+                    ? math.slerp(rotations[0], rotations[1],
+                        animationPlayer.TransitionElapsed / animationPlayer.TransitionDuration)
+                    : rotations[0];
+#if !ENABLE_TRANSFORM_V1
+                localTransform.Rotation = newRotation;
+#else
+                    rotation.Value = newRotation;
+#endif
             }
         }
     }
@@ -153,16 +198,35 @@ partial struct UpdateAnimationPlayerJob : IJobEntity
     [BurstCompile]
     public void Execute(ref AnimationPlayer animationPlayer)
     {
-        if(!animationPlayer.Playing) return;
+        if (!animationPlayer.Playing) return;
         // Update elapsed time
-        animationPlayer.Elapsed += DT * animationPlayer.Speed;
+        animationPlayer.CurrentElapsed += DT * animationPlayer.CurrentSpeed;
+        animationPlayer.NextElapsed += DT * animationPlayer.NextSpeed;
         if (animationPlayer.Loop)
         {
-            animationPlayer.Elapsed %= animationPlayer.CurrentDuration;
+            animationPlayer.CurrentElapsed %= animationPlayer.CurrentDuration;
+            animationPlayer.NextElapsed %= animationPlayer.NextDuration;
         }
         else
         {
-            animationPlayer.Elapsed = math.min(animationPlayer.Elapsed, animationPlayer.CurrentDuration);
+            animationPlayer.CurrentElapsed = math.min(animationPlayer.CurrentElapsed, animationPlayer.CurrentDuration);
+            animationPlayer.NextElapsed = math.min(animationPlayer.NextElapsed, animationPlayer.NextDuration);
+        }
+
+        // Update transition
+        if (animationPlayer.InTransition)
+        {
+            animationPlayer.TransitionElapsed += DT;
+            if (animationPlayer.TransitionElapsed >= animationPlayer.TransitionDuration)
+            {
+                animationPlayer.InTransition = false;
+                animationPlayer.TransitionElapsed = 0;
+                animationPlayer.TransitionDuration = 0;
+                animationPlayer.CurrentClipIndex = animationPlayer.NextClipIndex;
+                animationPlayer.CurrentElapsed = animationPlayer.NextElapsed;
+                animationPlayer.CurrentDuration = animationPlayer.NextDuration;
+                animationPlayer.CurrentSpeed = animationPlayer.NextSpeed;
+            }
         }
     }
 }
