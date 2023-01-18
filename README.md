@@ -37,4 +37,13 @@ foreach (var animationAspect in SystemAPI.Query<AnimationAspect>())
 }
 ```
 
+This example blends from the current clip to the next with the specified duration:
+```csharp
+var clipIndex = 1;
+foreach (var animationAspect in SystemAPI.Query<AnimationAspect>())
+{
+    animationAspect.Crossfade(clipIndex,0.5f);
+}
+```
+
 For more advanced usage, you can modify the `AnimationPlayer` component directly.
