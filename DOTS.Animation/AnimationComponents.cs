@@ -6,20 +6,29 @@ namespace AnimationSystem
 {
     public struct AnimationPlayer : IComponentData
     {
-        public int CurrentClipIndex;
-        public int NextClipIndex;
-        public float CurrentDuration;
-        public float NextDuration;
-        public float TransitionDuration;
-        public float CurrentElapsed;
-        public float NextElapsed;
-        public float TransitionElapsed;
-        public float CurrentSpeed;
-        public float NextSpeed;
-        
-        public bool Loop;
         public bool Playing;
         public bool InTransition;
+        
+        public float TransitionDuration;
+        public float TransitionElapsed;
+    }
+
+    public struct CurrentClip : IComponentData
+    {
+        public int ClipIndex;
+        public float Duration;
+        public float Elapsed;
+        public float Speed;
+        public bool Loop;
+    }
+    
+    public struct NextClip : IComponentData
+    {
+        public int ClipIndex;
+        public float Duration;
+        public float Elapsed;
+        public float Speed;
+        public bool Loop;
     }
 
     public struct AnimationClipData : IBufferElementData

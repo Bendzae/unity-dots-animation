@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -5,8 +6,6 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-
-#if UNITY_EDITOR
 using UnityEditor;
 
 namespace AnimationSystem.Hybrid
@@ -22,7 +21,7 @@ namespace AnimationSystem.Hybrid
             foreach (var clipAuthoring in authoring.Clips)
             {
                 var clip = clipAuthoring.clip;
-                
+
                 var curveBindings = AnimationUtility.GetCurveBindings(clip);
                 var animationBlobBuilder = new BlobBuilder(Allocator.Temp);
                 ref AnimationBlob animationBlob = ref animationBlobBuilder.ConstructRoot<AnimationBlob>();
@@ -53,7 +52,7 @@ namespace AnimationSystem.Hybrid
                     {
                         continue;
                     }
-                    
+
                     entityBuffer.Add(new AnimatedEntityBakingInfo()
                     {
                         ClipIndex = clipIndex,
@@ -63,7 +62,7 @@ namespace AnimationSystem.Hybrid
 
 
                     var curveDict = entityCurves.ToDictionary(curve => curve.propertyName, curve => curve);
-                    
+
                     var posX = AnimationUtility.GetEditorCurve(clip, curveDict.GetValueOrDefault("m_LocalPosition.x"));
                     var posY = AnimationUtility.GetEditorCurve(clip, curveDict.GetValueOrDefault("m_LocalPosition.y"));
                     var posZ = AnimationUtility.GetEditorCurve(clip, curveDict.GetValueOrDefault("m_LocalPosition.z"));
@@ -134,18 +133,34 @@ namespace AnimationSystem.Hybrid
 
             AddComponent(new AnimationPlayer()
             {
-                CurrentClipIndex = 0,
-                CurrentDuration = clipBuffer[0].Duration,
-                CurrentElapsed = 0,
-                CurrentSpeed = clipBuffer[0].Speed,
-                Loop = true,
                 Playing = true,
+                InTransition = false,
+                TransitionDuration = 0,
+                TransitionElapsed = 0,
+            });
+
+            AddComponent(new CurrentClip()
+            {
+                ClipIndex = 0,
+                Duration = clipBuffer[0].Duration,
+                Elapsed = 0,
+                Speed = clipBuffer[0].Speed,
+                Loop = true,
+            });
+            
+            AddComponent(new NextClip()
+            {
+                ClipIndex = 0,
+                Duration = clipBuffer[0].Duration,
+                Elapsed = 0,
+                Speed = clipBuffer[0].Speed,
+                Loop = true,
             });
 
             AddComponent(new NeedsBakingTag());
         }
     }
-    
+
     [BurstCompile]
     [WorldSystemFilter(WorldSystemFilterFlags.BakingSystem)]
     public partial struct AnimationBakingSystem : ISystem
@@ -164,20 +179,19 @@ namespace AnimationSystem.Hybrid
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
             var ecb = new EntityCommandBuffer(Allocator.TempJob);
-            
+
             var job = new AnimationBakingJob
             {
                 ecb = ecb.AsParallelWriter()
             }.ScheduleParallel(m_entityQuery, state.Dependency);
             job.Complete();
-            
+
             // Play back the ECB and update the entities.
             ecb.Playback(state.EntityManager);
             ecb.Dispose();
@@ -189,7 +203,8 @@ namespace AnimationSystem.Hybrid
             public EntityCommandBuffer.ParallelWriter ecb;
 
             [BurstCompile]
-            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in DynamicBuffer<AnimatedEntityBakingInfo> entities)
+            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity,
+                in DynamicBuffer<AnimatedEntityBakingInfo> entities)
             {
                 for (int entityIndex = 0; entityIndex < entities.Length; entityIndex++)
                 {
@@ -199,6 +214,7 @@ namespace AnimationSystem.Hybrid
                     {
                         ecb.AddComponent(chunkIndex, e, new AnimatedEntityRootTag());
                     }
+
                     if (bakingInfo.ClipIndex == 0)
                     {
                         ecb.AddComponent(chunkIndex, e, new AnimatedEntityDataInfo()
@@ -216,6 +232,5 @@ namespace AnimationSystem.Hybrid
             }
         }
     }
-    
 }
 #endif

@@ -11,12 +11,16 @@ namespace AnimationSystem
     public partial struct PlayAnimationSystem : ISystem
     {
         private ComponentLookup<AnimationPlayer> playerLookup;
+        private ComponentLookup<CurrentClip> currentClipLookup;
+        private ComponentLookup<NextClip> nextClipLookup;
         private BufferLookup<AnimationClipData> clipLookup;
 
         [BurstCompile]
         public void OnCreate(ref SystemState state)
         {
             playerLookup = state.GetComponentLookup<AnimationPlayer>();
+            currentClipLookup = state.GetComponentLookup<CurrentClip>();
+            nextClipLookup = state.GetComponentLookup<NextClip>();
             clipLookup = state.GetBufferLookup<AnimationClipData>();
         }
 
@@ -29,11 +33,15 @@ namespace AnimationSystem
         public void OnUpdate(ref SystemState state)
         {
             playerLookup.Update(ref state);
+            currentClipLookup.Update(ref state);
+            nextClipLookup.Update(ref state);
             clipLookup.Update(ref state);
 
             var updateAnimationJob = new UpdateAnimatedEntitesJob()
             {
                 PlayerLookup = playerLookup,
+                CurrentClipLookup = currentClipLookup,
+                NextClipLookup = nextClipLookup,
                 ClipLookup = clipLookup,
             }.ScheduleParallel(state.Dependency);
 
@@ -51,6 +59,8 @@ namespace AnimationSystem
     partial struct UpdateAnimatedEntitesJob : IJobEntity
     {
         [ReadOnly] public ComponentLookup<AnimationPlayer> PlayerLookup;
+        [ReadOnly] public ComponentLookup<CurrentClip> CurrentClipLookup;
+        [ReadOnly] public ComponentLookup<NextClip> NextClipLookup;
         [ReadOnly] public BufferLookup<AnimationClipData> ClipLookup;
 
         [BurstCompile]
@@ -66,27 +76,33 @@ namespace AnimationSystem
         )
         {
             var animationPlayer = PlayerLookup[info.AnimationDataOwner];
+            var currentClip = CurrentClipLookup[info.AnimationDataOwner];
             if (!animationPlayer.Playing) return;
             var clipBuffer = ClipLookup[info.AnimationDataOwner];
 
             var clips = new NativeArray<AnimationClipData>(2, Allocator.Temp);
-            clips[0] = clipBuffer[animationPlayer.CurrentClipIndex];
+            clips[0] = clipBuffer[currentClip.ClipIndex];
 
             var keyframeArrayIndices = new NativeArray<int>(2, Allocator.Temp);
-            keyframeArrayIndices[0] = clipInfo[animationPlayer.CurrentClipIndex].IndexInKeyframeArray;
+            keyframeArrayIndices[0] = clipInfo[currentClip.ClipIndex].IndexInKeyframeArray;
 
             var elapsedTimes = new NativeArray<float>(2, Allocator.Temp);
-            elapsedTimes[0] = animationPlayer.CurrentElapsed;
+            elapsedTimes[0] = currentClip.Elapsed;
 
             var durations = new NativeArray<float>(2, Allocator.Temp);
-            durations[0] = animationPlayer.CurrentDuration;
-            
+            durations[0] = currentClip.Duration;
+
+            var loopValues = new NativeArray<bool>(2, Allocator.Temp);
+            loopValues[0] = currentClip.Loop;
+
             if (animationPlayer.InTransition)
             {
-                clips[1] = clipBuffer[animationPlayer.NextClipIndex];
-                keyframeArrayIndices[1] = clipInfo[animationPlayer.NextClipIndex].IndexInKeyframeArray;
-                elapsedTimes[1] = animationPlayer.NextElapsed;
-                durations[1] = animationPlayer.NextDuration;
+                var nextClip = NextClipLookup[info.AnimationDataOwner];
+                clips[1] = clipBuffer[nextClip.ClipIndex];
+                keyframeArrayIndices[1] = clipInfo[nextClip.ClipIndex].IndexInKeyframeArray;
+                elapsedTimes[1] = nextClip.Elapsed;
+                durations[1] = nextClip.Duration;
+                loopValues[1] = nextClip.Loop;
             }
 
             // Position
@@ -101,6 +117,7 @@ namespace AnimationSystem
                     var length = keys.Length;
                     var elapsed = elapsedTimes[cIdx];
                     var duration = durations[cIdx];
+                    var loop = loopValues[cIdx]; // TODO need to do something with this here?
 
                     if (length > 0)
                     {
@@ -196,21 +213,29 @@ partial struct UpdateAnimationPlayerJob : IJobEntity
     public float DT;
 
     [BurstCompile]
-    public void Execute(ref AnimationPlayer animationPlayer)
+    public void Execute(ref AnimationPlayer animationPlayer, ref CurrentClip currentClip, ref NextClip nextClip)
     {
         if (!animationPlayer.Playing) return;
         // Update elapsed time
-        animationPlayer.CurrentElapsed += DT * animationPlayer.CurrentSpeed;
-        animationPlayer.NextElapsed += DT * animationPlayer.NextSpeed;
-        if (animationPlayer.Loop)
+        currentClip.Elapsed += DT * currentClip.Speed;
+        nextClip.Elapsed += DT * nextClip.Speed;
+
+        if (currentClip.Loop)
         {
-            animationPlayer.CurrentElapsed %= animationPlayer.CurrentDuration;
-            animationPlayer.NextElapsed %= animationPlayer.NextDuration;
+            currentClip.Elapsed %= currentClip.Duration;
         }
         else
         {
-            animationPlayer.CurrentElapsed = math.min(animationPlayer.CurrentElapsed, animationPlayer.CurrentDuration);
-            animationPlayer.NextElapsed = math.min(animationPlayer.NextElapsed, animationPlayer.NextDuration);
+            currentClip.Elapsed = math.min(currentClip.Elapsed, currentClip.Duration);
+        }
+
+        if (nextClip.Loop)
+        {
+            nextClip.Elapsed %= nextClip.Duration;
+        }
+        else
+        {
+            nextClip.Elapsed = math.min(nextClip.Elapsed, nextClip.Duration);
         }
 
         // Update transition
@@ -222,10 +247,11 @@ partial struct UpdateAnimationPlayerJob : IJobEntity
                 animationPlayer.InTransition = false;
                 animationPlayer.TransitionElapsed = 0;
                 animationPlayer.TransitionDuration = 0;
-                animationPlayer.CurrentClipIndex = animationPlayer.NextClipIndex;
-                animationPlayer.CurrentElapsed = animationPlayer.NextElapsed;
-                animationPlayer.CurrentDuration = animationPlayer.NextDuration;
-                animationPlayer.CurrentSpeed = animationPlayer.NextSpeed;
+                currentClip.ClipIndex = nextClip.ClipIndex;
+                currentClip.Duration = nextClip.Duration;
+                currentClip.Elapsed = nextClip.Elapsed;
+                currentClip.Speed = nextClip.Speed;
+                currentClip.Loop = nextClip.Loop;
             }
         }
     }
