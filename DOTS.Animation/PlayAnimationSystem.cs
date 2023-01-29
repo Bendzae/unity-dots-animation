@@ -117,11 +117,11 @@ namespace AnimationSystem
                     var length = keys.Length;
                     var elapsed = elapsedTimes[cIdx];
                     var duration = durations[cIdx];
-                    var loop = loopValues[cIdx]; // TODO need to do something with this here?
+                    var loop = loopValues[cIdx];
 
                     if (length > 0)
                     {
-                        var nextKeyIndex = 0;
+                        var nextKeyIndex = (loop) ? 0 : length - 1;;
                         for (int i = 0; i < length; i++)
                         {
                             if (keys[i].Time > elapsed)
@@ -166,10 +166,11 @@ namespace AnimationSystem
                     var length = keys.Length;
                     var elapsed = elapsedTimes[cIdx];
                     var duration = durations[cIdx];
+                    var loop = loopValues[cIdx];
 
                     if (length > 0)
                     {
-                        var nextKeyIndex = 0;
+                        var nextKeyIndex = (loop) ? 0 : length - 1;;
                         for (int i = 0; i < length; i++)
                         {
                             if (keys[i].Time > elapsed)
