@@ -37,12 +37,12 @@ foreach (var animationAspect in SystemAPI.Query<AnimationAspect>())
 }
 ```
 
-This example blends from the current clip to the next with the specified duration:
+This example blends from the current clip to the next with the specified duration & set it to loop:
 ```csharp
 var clipIndex = 1;
 foreach (var animationAspect in SystemAPI.Query<AnimationAspect>())
 {
-    animationAspect.Crossfade(clipIndex,0.5f);
+    animationAspect.Crossfade(clipIndex, 0.5f, true);
 }
 ```
 
