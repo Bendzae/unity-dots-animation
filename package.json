@@ -9,13 +9,13 @@
         "email": "bendzae@gmail.com"
     },
     "dependencies": {
-        "com.unity.entities": "1.0.0-pre.15",
-        "com.unity.entities.graphics": "1.0.0-pre.15"
+        "com.unity.entities": "1.0.0-pre.65",
+        "com.unity.entities.graphics": "1.0.0-pre.65"
     },
     "samples": [
         {
             "displayName": "Benchmark Test",
-            "description": "Spawn multiple aniamted characters",
+            "description": "Spawn multiple animated characters",
             "path": "Samples~/BenchmarkScene"
         }
     ]

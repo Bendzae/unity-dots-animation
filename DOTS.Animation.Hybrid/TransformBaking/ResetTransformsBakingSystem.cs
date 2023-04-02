@@ -1,6 +1,4 @@
-﻿#if !ENABLE_TRANSFORM_V1
-
-using Unity.Burst;
+﻿using Unity.Burst;
 using Unity.Entities;
 using Unity.Transforms;
 
@@ -20,18 +18,16 @@ namespace Unity.Rendering
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-
         }
 
         [BurstCompile]
         public void OnUpdate(ref SystemState state)
         {
-            foreach (var localTransform in SystemAPI.Query<RefRW<LocalTransform>>().WithAll<DeformedEntity>().WithOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab))
+            foreach (var localTransform in SystemAPI.Query<RefRW<LocalTransform>>().WithAll<DeformedEntity>()
+                         .WithOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab))
             {
                 localTransform.ValueRW = LocalTransform.Identity;
             }
         }
     }
 }
-
-#endif

@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace AnimationSystem.Hybrid
 {
-    
     internal class SkinnedMeshBaker : Baker<SkinnedMeshAuthoring>
     {
         public override void Bake(SkinnedMeshAuthoring authoring)
@@ -71,7 +70,6 @@ namespace AnimationSystem.Hybrid
         [BurstCompile]
         public void OnDestroy(ref SystemState state)
         {
-
         }
 
         [BurstCompile]
@@ -101,13 +99,10 @@ namespace AnimationSystem.Hybrid
             public EntityCommandBuffer.ParallelWriter ecb;
 
             [BurstCompile]
-            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in RootEntity rootEntity, in DynamicBuffer<BoneEntity> bones)
+            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in RootEntity rootEntity,
+                in DynamicBuffer<BoneEntity> bones)
             {
-#if !ENABLE_TRANSFORM_V1
                 ecb.AddComponent<LocalToWorld>(chunkIndex, rootEntity.Value); // this is possibly redundant
-#else
-                ecb.AddComponent<WorldToLocal>(chunkIndex, rootEntity.Value);
-#endif
                 ecb.AddComponent<RootEntity>(chunkIndex, rootEntity.Value);
 
                 // Add tags to the bones so we can find them later
@@ -120,5 +115,4 @@ namespace AnimationSystem.Hybrid
             }
         }
     }
-    
 }

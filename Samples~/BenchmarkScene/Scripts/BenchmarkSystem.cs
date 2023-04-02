@@ -58,14 +58,7 @@ public partial struct BenchmarkSystem : ISystem
                     {
                         if (x < currentRows && y < currentRows) continue;
                         var e = ecb.Instantiate(benchmarkInfo.ValueRO.Prefab);
-#if !ENABLE_TRANSFORM_V1
                         ecb.SetComponent(e, LocalTransform.FromPosition(new float3(x, 0, y)));
-#else
-                    ecb.SetComponent(e, new Translation
-                    {
-                        Value = new float3(x, 0, y),
-                    });
-#endif
                     }
                 }
 

@@ -37,7 +37,7 @@ namespace AnimationSystem
             nextClipLookup.Update(ref state);
             clipLookup.Update(ref state);
 
-            var updateAnimationJob = new UpdateAnimatedEntitesJob()
+            var updateAnimationJob = new UpdateAnimatedEntitiesJob()
             {
                 PlayerLookup = playerLookup,
                 CurrentClipLookup = currentClipLookup,
@@ -56,7 +56,7 @@ namespace AnimationSystem
 
     [BurstCompile]
     [WithNone(typeof(AnimatedEntityRootTag))]
-    partial struct UpdateAnimatedEntitesJob : IJobEntity
+    partial struct UpdateAnimatedEntitiesJob : IJobEntity
     {
         [ReadOnly] public ComponentLookup<AnimationPlayer> PlayerLookup;
         [ReadOnly] public ComponentLookup<CurrentClip> CurrentClipLookup;
@@ -67,12 +67,7 @@ namespace AnimationSystem
         public void Execute(
             AnimatedEntityDataInfo info,
             DynamicBuffer<AnimatedEntityClipInfo> clipInfo,
-#if !ENABLE_TRANSFORM_V1
             ref LocalTransform localTransform
-#else
-            ref Translation translation,
-            ref Rotation rotation
-#endif
         )
         {
             var animationPlayer = PlayerLookup[info.AnimationDataOwner];
@@ -121,7 +116,8 @@ namespace AnimationSystem
 
                     if (length > 0)
                     {
-                        var nextKeyIndex = (loop) ? 0 : length - 1;;
+                        var nextKeyIndex = (loop) ? 0 : length - 1;
+                        ;
                         for (int i = 0; i < length; i++)
                         {
                             if (keys[i].Time > elapsed)
@@ -147,11 +143,8 @@ namespace AnimationSystem
                     ? math.lerp(positions[0], positions[1],
                         animationPlayer.TransitionElapsed / animationPlayer.TransitionDuration)
                     : positions[0];
-#if !ENABLE_TRANSFORM_V1
+
                 localTransform.Position = newPosition;
-#else
-                    translation.Value = newPosition;
-#endif
             }
 
             // Rotation
@@ -170,7 +163,8 @@ namespace AnimationSystem
 
                     if (length > 0)
                     {
-                        var nextKeyIndex = (loop) ? 0 : length - 1;;
+                        var nextKeyIndex = (loop) ? 0 : length - 1;
+                        ;
                         for (int i = 0; i < length; i++)
                         {
                             if (keys[i].Time > elapsed)
@@ -196,11 +190,8 @@ namespace AnimationSystem
                     ? math.slerp(rotations[0], rotations[1],
                         animationPlayer.TransitionElapsed / animationPlayer.TransitionDuration)
                     : rotations[0];
-#if !ENABLE_TRANSFORM_V1
+                
                 localTransform.Rotation = newRotation;
-#else
-                    rotation.Value = newRotation;
-#endif
             }
         }
     }
