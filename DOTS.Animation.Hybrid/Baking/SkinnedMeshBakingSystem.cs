@@ -1,8 +1,11 @@
+using AnimationSystem;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Transforms;
 using UnityEngine;
+
+[assembly: RegisterGenericComponentType(typeof(DynamicBuffer<BoneEntity>))]
 
 namespace AnimationSystem.Hybrid
 {
@@ -62,7 +65,7 @@ namespace AnimationSystem.Hybrid
         public void OnCreate(ref SystemState state)
         {
             m_entityQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<SkinnedMeshTag>()
+                .WithAll<SkinnedMeshTag, RootEntity, BoneEntity>()
                 .WithOptions(EntityQueryOptions.IncludeDisabledEntities)
                 .Build(ref state);
         }
@@ -99,7 +102,7 @@ namespace AnimationSystem.Hybrid
             public EntityCommandBuffer.ParallelWriter ecb;
 
             [BurstCompile]
-            public void Execute([ChunkIndexInQuery] int chunkIndex, Entity entity, in RootEntity rootEntity,
+            public void Execute([ChunkIndexInQuery] int chunkIndex, in RootEntity rootEntity,
                 in DynamicBuffer<BoneEntity> bones)
             {
                 ecb.AddComponent<LocalToWorld>(chunkIndex, rootEntity.Value); // this is possibly redundant

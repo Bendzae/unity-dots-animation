@@ -147,7 +147,7 @@ namespace AnimationSystem.Hybrid
                 Speed = clipBuffer[0].Speed,
                 Loop = true,
             });
-            
+
             AddComponent(new NextClip()
             {
                 ClipIndex = 0,
@@ -171,7 +171,7 @@ namespace AnimationSystem.Hybrid
         public void OnCreate(ref SystemState state)
         {
             m_entityQuery = new EntityQueryBuilder(Allocator.Temp)
-                .WithAll<AnimationClipData, NeedsBakingTag>()
+                .WithAll<AnimationClipData, NeedsBakingTag, AnimatedEntityBakingInfo>()
                 .WithOptions(EntityQueryOptions.IncludeDisabledEntities | EntityQueryOptions.IncludePrefab)
                 .Build(ref state);
         }
