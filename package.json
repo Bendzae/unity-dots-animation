@@ -1,6 +1,6 @@
 {
     "name": "com.bendz.dots.animation",
-    "version": "0.0.3",
+    "version": "0.0.4",
     "description": "Simple animation library for dots.",
     "displayName": "Simple Dots Animation",
     "unity": "2022.2",
@@ -9,8 +9,8 @@
         "email": "bendzae@gmail.com"
     },
     "dependencies": {
-        "com.unity.entities": "1.0.0-pre.65",
-        "com.unity.entities.graphics": "1.0.0-pre.65"
+        "com.unity.entities": "1.0.8",
+        "com.unity.entities.graphics": "1.0.8"
     },
     "samples": [
         {
