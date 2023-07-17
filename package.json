@@ -1,6 +1,6 @@
 {
     "name": "com.bendz.dots.animation",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "description": "Simple animation library for dots.",
     "displayName": "Simple Dots Animation",
     "unity": "2022.2",
