@@ -11,6 +11,8 @@ namespace AnimationSystem
         
         public float TransitionDuration;
         public float TransitionElapsed;
+
+        public float SpeedMultiplier;
     }
 
     public struct CurrentClip : IComponentData

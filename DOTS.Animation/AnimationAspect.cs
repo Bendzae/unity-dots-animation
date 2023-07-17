@@ -49,5 +49,10 @@ namespace AnimationSystem
         {
             AnimationPlayer.ValueRW.Playing = false;
         }
+
+        public void SetSpeedMultiplier(float speedMultiplier)
+        {
+            AnimationPlayer.ValueRW.SpeedMultiplier = speedMultiplier;
+        }
     }
 }

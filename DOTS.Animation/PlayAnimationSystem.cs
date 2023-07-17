@@ -209,8 +209,8 @@ partial struct UpdateAnimationPlayerJob : IJobEntity
     {
         if (!animationPlayer.Playing) return;
         // Update elapsed time
-        currentClip.Elapsed += DT * currentClip.Speed;
-        nextClip.Elapsed += DT * nextClip.Speed;
+        currentClip.Elapsed += DT * currentClip.Speed * animationPlayer.SpeedMultiplier;
+        nextClip.Elapsed += DT * nextClip.Speed * animationPlayer.SpeedMultiplier;
 
         if (currentClip.Loop)
         {

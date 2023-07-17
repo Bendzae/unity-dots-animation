@@ -137,6 +137,7 @@ namespace AnimationSystem.Hybrid
                 InTransition = false,
                 TransitionDuration = 0,
                 TransitionElapsed = 0,
+                SpeedMultiplier = 1,
             });
 
             AddComponent(new CurrentClip()
